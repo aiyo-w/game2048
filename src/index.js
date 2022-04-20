@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import ReactDOM from "react-dom";
 import "./index.css";
 import { SquareComponent } from "./square-component";
@@ -7,10 +7,11 @@ function BackgroundGrid() {
   const [broadData, setBroadData] = useState([
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   ]);
+  const [isGameOver, setIsGameOver] = useState(false);
+  const [newSquare, setNewSquare] = useState(0);
   const size = Math.sqrt(broadData.length);
   const excludeIndex = [];
   let isAddNewIndex = true; // 是否添加新的方块
-  //const animationArr = [];
 
   const generateRandomIndex = (rangeValue, excludeValue) => {
     if (rangeValue === excludeValue.length) {
@@ -64,10 +65,15 @@ function BackgroundGrid() {
     const newIndex = generateRandomIndex(broadData.length, excludeIndex);
     if (newIndex === undefined) {
       // TODO:gameover
+      setIsGameOver(true);
     }
     broadData[newIndex] = 1;
     excludeIndex.push(newIndex);
     setBroadData(broadData.slice());
+
+    // 棋盘获取焦点
+    const broad = document.querySelector(".background-grid");
+    broad.focus();
   }, []);
 
   // 垂直移动
@@ -126,6 +132,12 @@ function BackgroundGrid() {
 
     if (compareArrays(lastBroadData, broadData)) {
       isAddNewIndex = false;
+
+      // 位置已满，且无可移动的值
+      if (!broadData.includes(0)) {
+        setIsGameOver(true);
+        console.log(isGameOver);
+      }
       return;
     }
 
@@ -197,6 +209,11 @@ function BackgroundGrid() {
 
     if (compareArrays(lastBroadData, broadData)) {
       isAddNewIndex = false;
+      // 位置已满，且无可移动的值
+      if (!broadData.includes(0)) {
+        setIsGameOver(true);
+        console.log(isGameOver);
+      }
       return;
     }
 
@@ -261,7 +278,10 @@ function BackgroundGrid() {
           {broadData[i + j] <= 0 ? (
             ""
           ) : (
-            <SquareComponent value={broadData[i + j]} />
+            <SquareComponent
+              value={broadData[i + j]}
+              newSquare={newSquare === i + j ? true : false}
+            />
           )}
         </div>
       );
@@ -308,23 +328,72 @@ function BackgroundGrid() {
       const newIndex = generateRandomIndex(broadData.length, excludeIndex);
       if (newIndex === undefined) {
         // TODO:gameover
+        setIsGameOver(true);
+        console.log(isGameOver);
+        return;
       }
-      broadData[newIndex] = 1;
+      // 当size>4时，添加的 方块随机值为1或者2
+      if (size >= 4) {
+        broadData[newIndex] = Math.floor(Math.random() * 2 + 1);
+      } else {
+        broadData[newIndex] = 1;
+      }
+
       excludeIndex.push(newIndex);
+      // 标记
+      setNewSquare(newIndex);
     }
 
     setBroadData(broadData.slice());
   }, []);
+  const doClick = useCallback((e) => {
+    console.log(11);
+    // 重置棋盘
+    broadData.forEach((item, index) => {
+      broadData[index] = 0;
+    });
+    excludeIndex.length = 0;
+    setIsGameOver(false);
+
+    // 生成种子方块的index
+    const seedIndex = generateRandomIndex(broadData.length, excludeIndex);
+
+    broadData[seedIndex] = 1;
+    excludeIndex.push(seedIndex);
+
+    const newIndex = generateRandomIndex(broadData.length, excludeIndex);
+    if (newIndex === undefined) {
+      // TODO:gameover
+      setIsGameOver(true);
+    }
+    broadData[newIndex] = 1;
+    excludeIndex.push(newIndex);
+    setBroadData(broadData.slice());
+
+    // 棋盘获取焦点
+    const broad = document.querySelector(".background-grid");
+    broad.focus();
+  }, []);
 
   return (
-    <div
-      className="background-grid"
-      onKeyUp={doKeyUp}
-      onKeyDown={doKeyDown}
-      tabIndex="0"
-    >
-      {rows}
-    </div>
+    <React.Fragment>
+      <div
+        className="background-grid"
+        onKeyUp={doKeyUp}
+        onKeyDown={doKeyDown}
+        tabIndex="0"
+      >
+        {rows}
+      </div>
+      {isGameOver ? (
+        <div className="gameover">
+          <span>Game Over!</span>
+          <button onClick={doClick}>Try Again</button>
+        </div>
+      ) : (
+        ""
+      )}
+    </React.Fragment>
   );
 }
 
