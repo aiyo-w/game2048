@@ -286,29 +286,29 @@ function App() {
         broad.focus();
     }, []);
 
+    const renderRows = (datas: number[]) => {
+        const rows = [];
+        // 生成棋盘
+        for (let i = 0; i < datas.length; i += size) {
+            let columns = [];
+            for (let j = 0; j < size; j++) {
+                const column = (
+                    <div className="grid-cell" key={i + j}>
+                        {datas[i + j] > 0
+                            && <SquareComponent value={datas[i + j]} newSquare={newSquare === i + j ? true : false} />
+                        }
+                    </div>
+                );
+                columns.push(column);
+            }
 
-    const rows = [];
-    // 生成棋盘
-    for (let i = 0; i < broadData.length; i += size) {
-        let columns = [];
-        for (let j = 0; j < size; j++) {
-            const column = (
-                <div className="grid-cell" key={i + j}>
-                    {broadData[i + j] > 0
-                        && <SquareComponent value={broadData[i + j]} newSquare={newSquare === i + j ? true : false} />
-                    }
-                </div>
+            rows.push(
+                <div className="grid-row" key={i}>{columns}</div>
             );
-            columns.push(column);
         }
 
-        const row = (
-            <div className="grid-row" key={i}>
-                {columns}
-            </div>
-        );
-        rows.push(row);
-    }
+        return rows;
+    };
 
     return (
         <React.Fragment>
@@ -318,7 +318,7 @@ function App() {
                 onKeyDown={doKeyDown}
                 tabIndex={0}
             >
-                {rows}
+                {renderRows(broadData)}
             </div>
             {isGameOver && <GameOverComponent tryAgain={doTryAgain} />}
         </React.Fragment>
