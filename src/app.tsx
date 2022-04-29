@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { GameOverComponent } from "./game-over-component";
 import { SquareComponent } from "./square-component";
 import { Operate } from "./types";
+import { Utils } from "./utils"
 
 
 function App() {
@@ -15,26 +16,16 @@ function App() {
     let isAddNewIndex = true; // 是否添加新的方块
     const size = Math.sqrt(broadData.length);
 
-    const generateRandomIndex = (rangeValue: number, excludeValue: number[]): number => {
-        const randomIndex = Math.floor(Math.random() * rangeValue);
-
-        // 不匹配数组中不包含随机数
-        if (!excludeValue.includes(randomIndex)) {
-            return randomIndex;
-        }
-
-        return generateRandomIndex(rangeValue, excludeValue);
-    };
 
     // 更新broadData
     useEffect(() => {
         // 生成种子方块的index
-        const seedIndex = generateRandomIndex(broadData.length, excludeIndex);
+        const seedIndex = Utils.generateRandomIndex(broadData.length, excludeIndex);
 
         broadData[seedIndex] = 1;
         excludeIndex.push(seedIndex);
 
-        const newIndex = generateRandomIndex(broadData.length, excludeIndex);
+        const newIndex = Utils.generateRandomIndex(broadData.length, excludeIndex);
         if (newIndex === undefined) {
             // TODO:gameover
             setIsGameOver(true);
@@ -63,7 +54,7 @@ function App() {
             }
         });
 
-        if (compareArrays(lastBroadData, broadData)) {
+        if (Utils.compareArrays(lastBroadData, broadData)) {
             isAddNewIndex = false;
             // 位置已满，且无可移动的值
             if (!broadData.includes(0)) {
@@ -76,7 +67,7 @@ function App() {
                     otherwise = Operate.Up;
 
                 const changeDatas = changeData(otherwise, broadData);
-                if (compareArrays(changeDatas, broadData))
+                if (Utils.compareArrays(changeDatas, broadData))
                     setIsGameOver(true);
                 else
                     setIsGameOver(false);
@@ -180,21 +171,6 @@ function App() {
         return oldRow;
     };
 
-    // 判断两个数组是否一致
-    const compareArrays = (arr1: number[], arr2: number[]) => {
-        let isSame = true;
-        if (arr1.length !== arr2.length) {
-            isSame = false;
-            return isSame;
-        }
-        arr1.forEach((item, index) => {
-            if (arr2[index] !== item) {
-                isSame = false;
-            }
-        });
-        return isSame;
-    };
-
     // 键盘按键弹起事件
     const doKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
         if (e.repeat) {
@@ -236,7 +212,7 @@ function App() {
 
         // 新增方块
         if (isAddNewIndex) {
-            const newIndex = generateRandomIndex(broadData.length, excludeIndex);
+            const newIndex = Utils.generateRandomIndex(broadData.length, excludeIndex);
             if (newIndex === undefined) {
                 // TODO:gameover
                 setIsGameOver(true);
@@ -267,12 +243,12 @@ function App() {
         setIsGameOver(false);
 
         // 生成种子方块的index
-        const seedIndex = generateRandomIndex(broadData.length, excludeIndex);
+        const seedIndex = Utils.generateRandomIndex(broadData.length, excludeIndex);
 
         broadData[seedIndex] = 1;
         excludeIndex.push(seedIndex);
 
-        const newIndex = generateRandomIndex(broadData.length, excludeIndex);
+        const newIndex = Utils.generateRandomIndex(broadData.length, excludeIndex);
         if (newIndex === undefined) {
             // TODO:gameover
             setIsGameOver(true);
