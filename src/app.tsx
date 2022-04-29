@@ -1,13 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { GameOverComponent } from "./game-over-component";
 import { SquareComponent } from "./square-component";
+import { Operate } from "./types";
 
-enum Operate {
-    Left = 'Left',
-    Right = 'Right',
-    Up = 'Up',
-    Down = 'Down'
-}
 
 function App() {
     const [broadData, setBroadData] = useState([
