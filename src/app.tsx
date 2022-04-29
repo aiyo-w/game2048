@@ -2,6 +2,13 @@ import React, { useCallback, useEffect, useState } from "react";
 import { GameOverComponent } from "./game-over-component";
 import { SquareComponent } from "./square-component";
 
+enum Operate {
+    Left = 'Left',
+    Right = 'Right',
+    Up = 'Up',
+    Down = 'Down'
+}
+
 function App() {
     const [broadData, setBroadData] = useState([
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -46,102 +53,65 @@ function App() {
         broad?.focus();
     }, []);
 
-    // 垂直移动
-    const verticalMove = (code: number) => {
+    // 移动方法
+    const move = (operation: Operate) => {
         const lastBroadData = [...broadData];
         isAddNewIndex = true;
         // 清空保存已有方块的位置
         excludeIndex.length = 0;
 
-        let isStartFromHead = true;
-        if (code === 38) {
-            isStartFromHead = true;
-        } else {
-            isStartFromHead = false;
-        }
-
-        for (let i = 0; i < size; i++) {
-            let colunmData = [];
-            for (let j = 0; j < size; j++) {
-                // 得到每一列的数据
-                colunmData.push(broadData[size * j + i]);
+        const datas = changeData(operation, broadData);
+        datas.forEach((item, index) => {
+            broadData[index] = item;
+            if (item !== 0) {
+                excludeIndex.push(index);
             }
-
-            let haveValueData: number[] = [];
-            colunmData.forEach((item, index) => {
-                if (item !== 0) {
-                    haveValueData.push(item);
-                    // 取出不为0的值后，剩下的全为O
-                    colunmData[index] = 0;
-                }
-            });
-
-            if (haveValueData.length > 1) {
-                if (code === 38) {
-                    // 往上相加
-                    haveValueData = calcAdd(haveValueData);
-                } else {
-                    // 往下相加
-                    haveValueData = calcAdd(haveValueData.reverse());
-                    haveValueData.reverse();
-                }
-            }
-            // 移动位置后的列数据
-            colunmData = fillRowData(colunmData, haveValueData, isStartFromHead);
-
-            //const arr = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-            // 将更改后的数据放入新得board数组中
-            colunmData.forEach((item: number, index: number) => {
-                broadData[size * index + i] = item;
-                // 保存更改位置后，值不为0的index
-                if (item !== 0) {
-                    excludeIndex.push(size * index + i);
-                }
-            });
-        }
+        });
 
         if (compareArrays(lastBroadData, broadData)) {
             isAddNewIndex = false;
-
             // 位置已满，且无可移动的值
             if (!broadData.includes(0)) {
-                setIsGameOver(true);
-                console.log(isGameOver);
+
+                let otherwise: Operate = operation;
+                // 判断当前是什么操作
+                if (operation === Operate.Down || operation === Operate.Up)
+                    otherwise = Operate.Left;
+                else
+                    otherwise = Operate.Up;
+
+                const changeDatas = changeData(otherwise, broadData);
+                if (compareArrays(changeDatas, broadData))
+                    setIsGameOver(true);
+                else
+                    setIsGameOver(false);
             }
             return;
         }
 
-        //animationArr = valueGetBiggerArr(lastBroadData, broadData);
-        // 新增方块
-        /* const newIndex = generateRandomIndex(broadData.length, excludeIndex);
-        if (newIndex === undefined) {
-          // TODO:gameover
-        }
-        broadData[newIndex] = 1;
-        excludeIndex.push(newIndex); */
-        //animationArr.push(newIndex);
         setBroadData(broadData.slice());
     };
 
-    // 水平移动
-    const horizontalMove = (code: number) => {
-        const lastBroadData = [...broadData];
-        // 清空保存已有方块的位置
-        excludeIndex.length = 0;
-        isAddNewIndex = true;
-
-        let isStartFromHead = true;
-        if (code === 37) {
-            isStartFromHead = true;
-        } else {
-            isStartFromHead = false;
-        }
+    // 数据变换
+    const changeData = (operation: Operate, data: number[]): number[] => {
+        const newData: number[] = [];
+        let isStartFromHead = operation === Operate.Left || operation === Operate.Up
+            ? true : false;
 
         for (let i = 0; i < size; i++) {
-            // 获取每一行
-            let rowData = broadData.slice(i * size, (i + 1) * size);
 
-            // 将每行中不为0的值保存在数组中
+            // 得到每一行数据
+            let rowData: number[] = [];
+            if (operation === Operate.Up || operation === Operate.Down) {
+                for (let j = 0; j < size; j++) {
+                    // 得到每一列的数据
+                    rowData.push(broadData[size * j + i]);
+                }
+            }
+            else {
+                rowData = data.slice(i * size, (i + 1) * size);
+            }
+
             let haveValueData: number[] = [];
             rowData.forEach((item, index) => {
                 if (item !== 0) {
@@ -152,7 +122,7 @@ function App() {
             });
 
             if (haveValueData.length > 1) {
-                if (code === 37) {
+                if (operation === Operate.Left || operation === Operate.Up) {
                     // 往左相加
                     // 得到相加后的数组
                     haveValueData = calcAdd(haveValueData);
@@ -164,41 +134,18 @@ function App() {
                 }
             }
 
-            // 移动位置后的行数据
             rowData = fillRowData(rowData, haveValueData, isStartFromHead);
 
-            // 将更改后的数据放入新得board数组中
-            rowData.forEach((item, index) => {
-                broadData[i * size + index] = item;
-                // 保存更改位置后，值不为0的index
-                if (item !== 0) {
-                    excludeIndex.push(i * size + index);
-                }
+            rowData.forEach((item: number, index: number) => {
+                if (operation === Operate.Up || operation === Operate.Down)
+                    newData[size * index + i] = item;
+                else
+                    newData[i * size + index] = item;
             });
         }
 
-        if (compareArrays(lastBroadData, broadData)) {
-            isAddNewIndex = false;
-            // 位置已满，且无可移动的值
-            if (!broadData.includes(0)) {
-                setIsGameOver(true);
-                console.log(isGameOver);
-            }
-            return;
-        }
-
-        // 新增方块
-        /* const newIndex = generateRandomIndex(broadData.length, excludeIndex);
-        if (newIndex === undefined) {
-          // TODO:gameover
-        }
-        // animationArr = valueGetBiggerArr(lastBroadData, broadData);
-    
-        broadData[newIndex] = 1;
-        excludeIndex.push(newIndex); */
-        //animationArr.push(newIndex);
-        setBroadData(broadData.slice());
-    };
+        return newData;
+    }
 
     // 加法计算
     const calcAdd = (arr: number[]) => {
@@ -258,27 +205,39 @@ function App() {
         if (e.repeat) {
             return;
         }
+        // TODO:值转换
+        let operation: Operate = undefined as any;
         switch (e.keyCode) {
             case 37:
-                horizontalMove(e.keyCode);
+            case 65:
+                operation = Operate.Left;
                 break;
             case 38:
-                verticalMove(e.keyCode);
+            case 87:
+                operation = Operate.Up;
                 break;
             case 39:
-                horizontalMove(e.keyCode);
+            case 68:
+                operation = Operate.Right;
                 break;
             case 40:
-                verticalMove(e.keyCode);
+            case 83:
+                operation = Operate.Down;
                 break;
             default:
                 break;
         }
+        // TODO:调移动方法
+        if (operation)
+            move(operation);
     }, []);
     const doKeyUp = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
         if (e.repeat) {
             return;
         }
+
+        const keycodes: number[] = [37, 38, 39, 40, 65, 87, 68, 83];
+        if (!keycodes.includes(e.keyCode)) return;
 
         // 新增方块
         if (isAddNewIndex) {
