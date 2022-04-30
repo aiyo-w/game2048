@@ -16,23 +16,13 @@ function App() {
     let isAddNewIndex = true; // 是否添加新的方块
     const size = Math.sqrt(broadData.length);
 
-
     // 更新broadData
     useEffect(() => {
         // 生成种子方块的index
-        const seedIndex = Utils.generateRandomIndex(broadData.length, excludeIndex);
+        createSquare(broadData, excludeIndex);
+        createSquare(broadData, excludeIndex);
 
-        broadData[seedIndex] = 1;
-        excludeIndex.push(seedIndex);
-
-        const newIndex = Utils.generateRandomIndex(broadData.length, excludeIndex);
-        if (newIndex === undefined) {
-            // TODO:gameover
-            setIsGameOver(true);
-        }
-        broadData[newIndex] = 1;
-        excludeIndex.push(newIndex);
-        setBroadData(broadData.slice());
+        setBroadData([...broadData]);
 
         // 棋盘获取焦点
         const broad = document.querySelector(".background-grid") as HTMLDivElement;
@@ -75,7 +65,7 @@ function App() {
             return;
         }
 
-        setBroadData(broadData.slice());
+        setBroadData([...broadData]);
     };
 
     // 数据变换
@@ -171,6 +161,24 @@ function App() {
         return oldRow;
     };
 
+    // 生成新方块
+    const createSquare = (data: number[], excludeIndex: number[]): number => {
+        // 生成新方块的index
+        const newIndex = Utils.generateRandomIndex(data.length, excludeIndex);
+
+        // 给方块赋新值
+        if (size >= 4) {
+            data[newIndex] = Math.floor(Math.random() * 2 + 1);
+        } else {
+            data[newIndex] = 1;
+        }
+
+        // 把方块index放进已有方块的数组中
+        excludeIndex.push(newIndex);
+
+        return newIndex;
+    };
+
     // 键盘按键弹起事件
     const doKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
         if (e.repeat) {
@@ -202,6 +210,7 @@ function App() {
         if (operation)
             move(operation);
     }, []);
+    
     const doKeyUp = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
         if (e.repeat) {
             return;
@@ -212,29 +221,15 @@ function App() {
 
         // 新增方块
         if (isAddNewIndex) {
-            const newIndex = Utils.generateRandomIndex(broadData.length, excludeIndex);
-            if (newIndex === undefined) {
-                // TODO:gameover
-                setIsGameOver(true);
-                console.log(isGameOver);
-                return;
-            }
-            // 当size>4时，添加的 方块随机值为1或者2
-            if (size >= 4) {
-                broadData[newIndex] = Math.floor(Math.random() * 2 + 1);
-            } else {
-                broadData[newIndex] = 1;
-            }
-
-            excludeIndex.push(newIndex);
+            const newIndex = createSquare(broadData, excludeIndex);
             // 标记
             setNewSquare(newIndex);
         }
 
-        setBroadData(broadData.slice());
+        setBroadData([...broadData]);
     }, []);
 
-    const doTryAgain = useCallback(() => {
+    const doTryAgain = () => {
         // 重置棋盘
         broadData.forEach((item, index) => {
             broadData[index] = 0;
@@ -242,25 +237,20 @@ function App() {
         excludeIndex.length = 0;
         setIsGameOver(false);
 
-        // 生成种子方块的index
-        const seedIndex = Utils.generateRandomIndex(broadData.length, excludeIndex);
+        // TODO:生成方块操作不该在此处执行，
+        // 但尝试重置后再次effect，引入数据不一致的问题
+        // 现在水平有限，后面再解决
+        {
+            // 生成种子方块的index
+            createSquare(broadData, excludeIndex);
+            createSquare(broadData, excludeIndex);
+            setBroadData(broadData.slice());
 
-        broadData[seedIndex] = 1;
-        excludeIndex.push(seedIndex);
-
-        const newIndex = Utils.generateRandomIndex(broadData.length, excludeIndex);
-        if (newIndex === undefined) {
-            // TODO:gameover
-            setIsGameOver(true);
+            // 棋盘获取焦点
+            const broad = document.querySelector(".background-grid") as HTMLDivElement;
+            broad.focus();
         }
-        broadData[newIndex] = 1;
-        excludeIndex.push(newIndex);
-        setBroadData(broadData.slice());
-
-        // 棋盘获取焦点
-        const broad = document.querySelector(".background-grid") as HTMLDivElement;
-        broad.focus();
-    }, []);
+    };
 
     const renderRows = (datas: number[]) => {
         const rows = [];
