@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { GameOverComponent } from "./game-over-component";
 import { SquareComponent } from "./square-component";
 import { Operate } from "./types";
@@ -12,15 +12,15 @@ function App() {
     const [isGameOver, setIsGameOver] = useState(false);
     const [newSquare, setNewSquare] = useState(0);
 
-    const excludeIndex: number[] = [];
+    const excludeIndex = useRef<number[]>([]);
     let isAddNewIndex = true; // 是否添加新的方块
     const size = Math.sqrt(broadData.length);
 
     // 更新broadData
     useEffect(() => {
         // 生成种子方块的index
-        createSquare(broadData, excludeIndex);
-        createSquare(broadData, excludeIndex);
+        createSquare(broadData, excludeIndex.current);
+        createSquare(broadData, excludeIndex.current);
 
         setBroadData([...broadData]);
 
@@ -30,17 +30,17 @@ function App() {
     }, []);
 
     // 移动方法
-    const move = (operation: Operate) => {
+    const move = useCallback((operation: Operate) => {
         const lastBroadData = [...broadData];
         isAddNewIndex = true;
         // 清空保存已有方块的位置
-        excludeIndex.length = 0;
+        excludeIndex.current.length = 0;
 
         const datas = changeData(operation, broadData);
         datas.forEach((item, index) => {
             broadData[index] = item;
             if (item !== 0) {
-                excludeIndex.push(index);
+                excludeIndex.current.push(index);
             }
         });
 
@@ -66,7 +66,7 @@ function App() {
         }
 
         setBroadData([...broadData]);
-    };
+    }, [setBroadData, setIsGameOver, broadData]);
 
     // 数据变换
     const changeData = (operation: Operate, data: number[]): number[] => {
@@ -209,8 +209,8 @@ function App() {
         // TODO:调移动方法
         if (operation)
             move(operation);
-    }, []);
-    
+    }, [move]);
+
     const doKeyUp = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
         if (e.repeat) {
             return;
@@ -221,20 +221,24 @@ function App() {
 
         // 新增方块
         if (isAddNewIndex) {
-            const newIndex = createSquare(broadData, excludeIndex);
+            const newIndex = createSquare(broadData, excludeIndex.current);
+            console.log(broadData);
+            console.log(newIndex);
+            console.log(excludeIndex);
+
             // 标记
             setNewSquare(newIndex);
         }
 
         setBroadData([...broadData]);
-    }, []);
+    }, [broadData, setBroadData, setNewSquare]);
 
-    const doTryAgain = () => {
+    const doTryAgain = useCallback(() => {
         // 重置棋盘
         broadData.forEach((item, index) => {
             broadData[index] = 0;
         });
-        excludeIndex.length = 0;
+        excludeIndex.current = [];
         setIsGameOver(false);
 
         // TODO:生成方块操作不该在此处执行，
@@ -242,15 +246,15 @@ function App() {
         // 现在水平有限，后面再解决
         {
             // 生成种子方块的index
-            createSquare(broadData, excludeIndex);
-            createSquare(broadData, excludeIndex);
-            setBroadData(broadData.slice());
+            createSquare(broadData, excludeIndex.current);
+            createSquare(broadData, excludeIndex.current);
+            setBroadData([...broadData]);
 
             // 棋盘获取焦点
             const broad = document.querySelector(".background-grid") as HTMLDivElement;
             broad.focus();
         }
-    };
+    }, [setBroadData, broadData, setIsGameOver]);
 
     const renderRows = (datas: number[]) => {
         const rows = [];

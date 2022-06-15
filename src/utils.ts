@@ -18,6 +18,10 @@ export namespace Utils {
     export const generateRandomIndex = (rangeValue: number, excludeValue: number[]): number => {
         const randomIndex = Math.floor(Math.random() * rangeValue);
 
+        if (excludeValue.length >= rangeValue) {
+            return Number.NaN;
+        }
+
         // 不匹配数组中不包含随机数
         if (!excludeValue.includes(randomIndex)) {
             return randomIndex;
